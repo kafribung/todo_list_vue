@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ToDo List API</title>
+    <style>
+        .garisTengah {
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <input type="text" placeholder="masukkan data" v-model="inputan" v-on:keyup.enter="add" autofocus>
+        <components v-bind:data="todos"></components>
+    </div>
+
+    <template id="todo-list">
+        <ul type="square">
+            <li v-if="data.length == 0">Data masih kosong</li>
+            <li v-for="(data, index) in data" :key="index"
+                v-bind:class="{'garisTengah' : (typeof data.done === 'string')? parseInt(data.done) : data.done }">
+                {{data.text}} -
+                <button v-on:click=" hapus(index, data.id)">hapus</button>
+                <button v-on:click="beres(data, data.id)">beres</button>
+            </li>
+        </ul>
+    </template>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<!-- VueResource -->
+<script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+<script>
+    Vue.component('components', {
+        template: '#todo-list',
+        props: ['data'],
+        methods: {
+            hapus: function(index, id) {
+                this.data.splice(index, 1)
+                this.$http.delete("api/dataAPI.php?id=" + id).then(response => {
+                        console.log(response);
+                        console.log('berhasil bro')
+                    })
+                    // localStorage.setItem('listItem', JSON.stringify(this.todos))
+
+            },
+            beres: function(index, id) {
+                (index.done == 0) ? index.done = false: true;
+                index.done = !index.done;
+
+                this.$http.patch('api/dataAPI.php?id=' + id + '&done=' + index.done).then(respone => {
+                    console.log('garis tengah berhasil');
+                })
+
+
+            }
+        }
+
+
+    });
+    new Vue({
+        el: '#app',
+        data: {
+            toDoList: '',
+            todos: [],
+            done: false,
+            inputan: '',
+        },
+        methods: {
+            add: function() {
+                let input = this.inputan.trim();
+                this.todos.push({
+                    id: '',
+                    text: input,
+                    done: false
+                });
+                this.inputan = '';
+                this.$http.post('api/dataAPI.php', {
+                    id: '',
+                    text: input,
+                    done: false
+                }).then(respone => {
+                    console.log(respone)
+                })
+
+                // localStorage.setItem('listItem', JSON.stringify(this.todos))
+            }
+
+        },
+        mounted() {
+            // this.todos = JSON.parse(localStorage.getItem('listItem')) || []
+            this.$http.get('api/dataAPI.php').then(response => {
+                this.todos = response.body
+            })
+
+        },
+
+    });
+    Vue.http.options.emulateJSON = true;
+</script>
+
+</html>
